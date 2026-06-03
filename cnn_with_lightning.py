@@ -28,30 +28,31 @@ class LitCNN(L.LightningModule):
         x = self.pool(torch.relu((self.layer1(x))))
         x = self.pool(torch.relu((self.layer2(x))))
         x = x.view(-1,18*2*2)
-        x = torch.relu(self.fc1(x))  
-        x = torch.relu(self.fc2(x)) 
-        x = self.fc3(x) 
+        x = torch.relu(self.fc1(x))
+        x = torch.relu(self.fc2(x))
+        x = self.fc3(x)
 
-        return x 
-    
+        return x
+
     def training_step(self, batch, batch_idx):
-        # training_step defines the train loop.
         image, label = batch
         output = self(image)
         loss_f = nn.CrossEntropyLoss()
         loss = loss_f(output,label)
-
+        self.log("train_loss", loss, prog_bar=True)
         return loss
-    
-    def test_step(self, batch,batch_idx):
 
+    def validation_step(self, batch, batch_idx):
         image, label = batch
         output = self(image)
         loss_f = nn.CrossEntropyLoss()
-        loss = loss_f(output,label)
-
+        loss = loss_f(output, label)
+        preds = torch.argmax(output, dim=1)
+        acc = torch.eq(preds, label).float().mean()
+        self.log("val_loss", loss, prog_bar=True)
+        self.log("val_acc", acc, prog_bar=True)
         return loss
-    
+
     def train_dataloader(self):
         train_dataset = torchvision.datasets.CIFAR10(root = "./cifer_data",train = True,
                                              transform= atransform,download = True)
@@ -59,31 +60,20 @@ class LitCNN(L.LightningModule):
         train_loader = u_data.DataLoader(train_dataset,batch_size=8,shuffle = True)
 
         return train_loader
-    
-    def test_dataloader(self):
+
+    def val_dataloader(self):
        test_dataset = torchvision.datasets.CIFAR10(root = "./cifer_data",train= False,
                                             transform= atransform,download = True)
 
-       test_loader = u_data.DataLoader(test_dataset,batch_size=1,shuffle=False)
+       test_loader = u_data.DataLoader(test_dataset,batch_size=4,shuffle=False)
 
        return test_loader
-    
+
     def configure_optimizers(self):
         pg = [p for p in self.parameters() if p.requires_grad]
         return op.Adam(pg,lea_rate)
 
-if __name__ =="__main__" :
+if __name__ == "__main__":
     model = LitCNN()
-    trainer = L.Trainer()
+    trainer = L.Trainer(max_epochs=20)
     trainer.fit(model)
-    
-
-
-
-
-
-
-
-
-
-

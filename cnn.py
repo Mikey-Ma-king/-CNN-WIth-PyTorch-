@@ -11,8 +11,6 @@ import torchvision
 from tqdm import tqdm
 
 classes = ("plane","car","bird","cat","deer","dog","frog","horse","ship","truck")
-classes_pred = np.zeros(10)
-classes_num = np.zeros(10)
 
 class CNN(nn.Module):
     def __init__(self):
@@ -51,7 +49,7 @@ test_dataset = torchvision.datasets.CIFAR10(root = "./cifer_data",train= False,
 
 test_loader = u_data.DataLoader(test_dataset,batch_size=4,shuffle=False)
 
-def infer(model,dataset,batch_size,device):
+def infer(model, dataset, device):
     model.eval()
     acc_num = 0
     classes_pred = np.zeros(10)
@@ -59,18 +57,18 @@ def infer(model,dataset,batch_size,device):
 
     with torch.no_grad():
         for data in dataset:
-            datas,label = data
+            datas, label = data
             outputs = model(datas.to(device))
-            predictions = torch.argmax(outputs,dim = 1)
-            acc_num += torch.eq(predictions,label.to(device)).sum().item()
+            predictions = torch.argmax(outputs, dim=1)
+            acc_num += torch.eq(predictions, label.to(device)).sum().item()
 
-            for i in range(batch_size):
-                if label[i]==predictions[i]:
-                    classes_pred[label[i]] +=1
-                classes_num[label[i]]+=1
+            for i in range(len(label)):
+                if label[i] == predictions[i]:
+                    classes_pred[label[i]] += 1
+                classes_num[label[i]] += 1
 
-    acc = acc_num/len(dataset)
-    return acc
+    acc = acc_num / len(dataset.dataset)
+    return acc, classes_pred, classes_num
 
 def main(lea_rate = 0.005,turns = 20):
     model = CNN().to(device)
@@ -82,7 +80,7 @@ def main(lea_rate = 0.005,turns = 20):
     for turn in range(turns) :
         model.train()
 
-        train_bar = tqdm(train_loader, file = sys.stdout, ncols = 100)#显示训练过程，可视化
+        train_bar = tqdm(train_loader, file = sys.stdout, ncols = 100)
 
         for datas in train_bar:
             data,label = datas
@@ -96,25 +94,13 @@ def main(lea_rate = 0.005,turns = 20):
 
             train_bar.desc = "train turns {}/{} loss {:.4f}".format(turn+1,turns,loss)
 
-        test_acc = infer(model,test_loader,4,device)
+        test_acc, classes_pred, classes_num = infer(model, test_loader, device)
         print("test turns {}/{}  test_acc {}".format(turn+1,turns,test_acc))
-        test_acc = 0
-        
+
     print("Finish Training")
 
     for i in range(10):
-        print (f"{classes[i]}'s accuracy is {100*classes_pred[i]/classes_num[i]}%.")
+        print(f"{classes[i]}'s accuracy is {100*classes_pred[i]/classes_num[i]:.1f}%.")
 
-if __name__ =="__main__" :
-    main()   
-    
-
-
-
-
-
-
-
-
-
-
+if __name__ == "__main__":
+    main()
