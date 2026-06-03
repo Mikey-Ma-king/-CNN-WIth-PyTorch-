@@ -23,6 +23,7 @@ class LitCNN(L.LightningModule):
        self.fc1 = nn.Linear(18*2*2,120)#final size
        self.fc2 = nn.Linear(120,80)
        self.fc3 = nn.Linear(80,10)
+       self.loss_f = nn.CrossEntropyLoss()
 
     def forward(self,x):
         x = self.pool(torch.relu((self.layer1(x))))
@@ -37,16 +38,14 @@ class LitCNN(L.LightningModule):
     def training_step(self, batch, batch_idx):
         image, label = batch
         output = self(image)
-        loss_f = nn.CrossEntropyLoss()
-        loss = loss_f(output,label)
+        loss = self.loss_f(output, label)
         self.log("train_loss", loss, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         image, label = batch
         output = self(image)
-        loss_f = nn.CrossEntropyLoss()
-        loss = loss_f(output, label)
+        loss = self.loss_f(output, label)
         preds = torch.argmax(output, dim=1)
         acc = torch.eq(preds, label).float().mean()
         self.log("val_loss", loss, prog_bar=True)

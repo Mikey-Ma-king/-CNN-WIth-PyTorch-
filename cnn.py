@@ -37,7 +37,7 @@ class CNN(nn.Module):
 atransform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),
              torchvision.transforms.Normalize(mean = [0.485,0.456,0.406], std = [0.229,0.224,0.225])])
 
-device = torch.device("cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 train_dataset = torchvision.datasets.CIFAR10(root = "./cifer_data",train = True,
                                              transform= atransform,download = True)
@@ -64,8 +64,8 @@ def infer(model, dataset, device):
 
             for i in range(len(label)):
                 if label[i] == predictions[i]:
-                    classes_pred[label[i]] += 1
-                classes_num[label[i]] += 1
+                    classes_pred[label[i].item()] += 1
+                classes_num[label[i].item()] += 1
 
     acc = acc_num / len(dataset.dataset)
     return acc, classes_pred, classes_num
